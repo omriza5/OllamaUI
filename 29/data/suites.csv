@@ -1,0 +1,2 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"","46742","test_dark_mode","tests","Wed Sep 03 07:13:32 UTC 2025","broken","Wed Sep 03 07:14:19 UTC 2025","TestNavigation","test_navigation","",""
