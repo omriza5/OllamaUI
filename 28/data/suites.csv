@@ -1,0 +1,2 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"","12192","User can switch to dark mode and see the theme applied","tests","Sun Sep 07 09:53:01 UTC 2025","passed","Sun Sep 07 09:53:13 UTC 2025","TestNavigation","test_navigation","",""
