@@ -21,6 +21,7 @@ services:
       - ENV=${ENV}
       - YOLO_SERVICE=${YOLO_SERVICE}
       - YOLO_SERVICE_DEV=${YOLO_SERVICE_DEV}
+      - RABBITMQ_URL=${RABBITMQ_URL}
 
   postgres:
     image: postgres:16
