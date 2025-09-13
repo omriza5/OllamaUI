@@ -11,6 +11,7 @@ services:
       - RABBITMQ_URL=${RABBITMQ_URL}
     depends_on:
       - postgres
+      - rabbitmq
 
   ollama-ui:
     image: ${OLLAMA_UI_IMAGE}

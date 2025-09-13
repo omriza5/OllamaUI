@@ -10,7 +10,7 @@ export async function GET(
     // Proxy the request to YoloService
     const baseUrl =
       process.env.ENV !== "development"
-        ? process.env.YOLO_SERVICE_URL
+        ? process.env.YOLO_SERVICE
         : process.env.YOLO_SERVICE_DEV;
     const yoloServiceUrl = `http://${baseUrl}/prediction/${uid}`;
 
