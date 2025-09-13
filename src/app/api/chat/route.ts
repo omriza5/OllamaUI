@@ -73,7 +73,7 @@ export async function POST(req: Request) {
       const result: any = await requestPrediction(
         chatId,
         imageName || "image.jpg",
-        1,
+        null,
         predictionUid
       );
 
