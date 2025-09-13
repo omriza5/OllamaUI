@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from "uuid";
 import useChatStore from "@/app/hooks/useChatStore";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { set } from "lodash";
 
 export interface ChatProps {
   id: string;
@@ -59,8 +60,12 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
   const saveMessages = useChatStore((state) => state.saveMessages);
   const getMessagesById = useChatStore((state) => state.getMessagesById);
   const currentImageName = useChatStore((state) => state.currentImageName);
+  const [predictionUid, setPredictionUid] = useState<string | null>(null);
   const router = useRouter();
+  const { result: predictionResult, loading: pollingLoading } =
+    usePredictionPolling(predictionUid);
 
+  console.log("PREDICTION RESULT", predictionResult);
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     window.history.replaceState({}, "", `/c/${id}`);
@@ -80,16 +85,19 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
         }))
       : [];
 
+    const predictionUid = uuidv4();
     const requestOptions: ChatRequestOptions = {
       ...(base64Images && {
         data: {
           images: base64Images,
           chatId: id,
           imageName: currentImageName,
+          predictionUid,
         },
         experimental_attachments: attachments,
       }),
     };
+    setPredictionUid(predictionUid);
     handleSubmit(e, requestOptions);
     saveMessages(id, [...messages, userMessage]);
     setBase64Images(null);
@@ -163,4 +171,73 @@ export default function Chat({ initialMessages, id, isMobile }: ChatProps) {
       )}
     </div>
   );
+}
+
+export function usePredictionPolling(
+  predictionUid: string | null,
+  interval = 2000
+) {
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const timer = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!predictionUid) return;
+
+    setLoading(true);
+
+    const poll = async () => {
+      try {
+        // Call your API route that proxies to yoloService
+        const res = await fetch(`/api/prediction/${predictionUid}`);
+        const data = await res.json();
+        setResult(data);
+        // Stop polling if prediction is complete (adjust condition as needed)
+        if (data.uid) {
+          toast.success("Prediction completed successfully!");
+
+          // Format the data object for readable display with bold keys
+          const formatData = (obj: any, indent = 0) => {
+            const spaces = "  ".repeat(indent);
+            let result = "";
+
+            for (const [key, value] of Object.entries(obj)) {
+              if (Array.isArray(value)) {
+                result += `${spaces}**${key}**:\n`;
+                value.forEach((item, index) => {
+                  result += `${spaces}  [${index}]:\n`;
+                  if (typeof item === "object") {
+                    result += formatData(item, indent + 2);
+                  } else {
+                    result += `${spaces}    ${item}\n`;
+                  }
+                });
+              } else if (typeof value === "object" && value !== null) {
+                result += `${spaces}**${key}**:\n`;
+                result += formatData(value, indent + 1);
+              } else {
+                result += `${spaces}**${key}**: ${value}\n`;
+              }
+            }
+            return result;
+          };
+
+          alert(formatData(data));
+          setLoading(false);
+          return;
+        }
+        timer.current = setTimeout(poll, interval);
+      } catch (err) {
+        setLoading(false);
+      }
+    };
+
+    poll();
+
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [predictionUid, interval]);
+
+  return { result, loading };
 }

@@ -1,4 +1,6 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { requestPrediction } from "../../../utils/producer";
+import { v4 as uuidv4 } from "uuid";
 
 const s3 = new S3Client({
   region: "eu-west-1",
@@ -35,16 +37,12 @@ async function uploadImageToS3(
 
 export async function POST(req: Request) {
   // Destructure request data
-  const { messages, selectedModel, data } = await req.json();
+  const { data } = await req.json();
+
   // Extract image name and chat id from data
   const imageName = data?.imageName;
   const chatId = data?.chatId;
-
-  // Remove experimental_attachments from each message
-  const cleanedMessages = messages.map((message: any) => {
-    const { experimental_attachments, ...cleanMessage } = message;
-    return cleanMessage;
-  });
+  const predictionUid = data?.predictionUid;
 
   let message = "Please provide an image for object detection.";
 
@@ -70,38 +68,16 @@ export async function POST(req: Request) {
       const formData = new FormData();
       formData.append("file", blob, imageName || "image.jpg");
 
-      // Build YOLO service URL with query params
-      const yoloUrl = `http://${
-        process.env.ENV === "development"
-          ? process.env.YOLO_SERVICE_DEV
-          : process.env.YOLO_SERVICE
-      }/predict?img_name=${encodeURIComponent(
-        imageName || "image.jpg"
-      )}&chat_id=${encodeURIComponent(chatId || "")}`;
-
       // Call the object detection API
-      const predictionResponse = await fetch(yoloUrl, {
-        method: "POST",
-        body: formData,
-      });
 
-      if (!predictionResponse.ok) {
-        throw new Error(`Prediction API error: ${predictionResponse.status}`);
-      }
+      const result: any = await requestPrediction(
+        chatId,
+        imageName || "image.jpg",
+        1,
+        predictionUid
+      );
 
-      const predictionResult = await predictionResponse.json();
-
-      // Format the detection results for chat
-      message = `🔍 **Object Detection Results**
-
-          **Detection Count:** ${predictionResult.detection_count}
-          **Detected Objects:** ${predictionResult.labels.join(", ")}
-          **Prediction ID:** ${predictionResult.prediction_uid}
-
-          detected ${predictionResult.detection_count} object(s). 
-           The detected objects include: ${predictionResult.labels.join(
-             ", "
-           )}.`;
+      return new Response(result);
     } catch (error) {
       console.error("Object detection error:", error);
       if (
