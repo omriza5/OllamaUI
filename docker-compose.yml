@@ -8,8 +8,10 @@ services:
     environment:
       - DB_BACKEND=${DB_BACKEND}
       - DATABASE_URL=${DATABASE_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
     depends_on:
       - postgres
+      - rabbitmq
 
   ollama-ui:
     image: ${OLLAMA_UI_IMAGE}
@@ -19,6 +21,7 @@ services:
       - ENV=${ENV}
       - YOLO_SERVICE=${YOLO_SERVICE}
       - YOLO_SERVICE_DEV=${YOLO_SERVICE_DEV}
+      - RABBITMQ_URL=${RABBITMQ_URL}
 
   postgres:
     image: postgres:16
@@ -31,5 +34,16 @@ services:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:4.0-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672" # AMQP port
+      - "15672:15672" # Management UI port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
 volumes:
   pgdata:
+  rabbitmq_data:
